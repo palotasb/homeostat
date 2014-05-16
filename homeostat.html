@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" value="text/html; charset=utf-8" />
+    <title>Homeostat simulator</title>
+    <style type="text/css">
+        body {
+            font-family: Times, Serif;
+        }
+
+        table, td, th {
+            border: 0px solid #aaa;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 0 1em 0 0;
+        }
+
+        input {
+            width: 4em;
+        }
+
+        #y1, #y2, #y3, #y4 {
+            background-color: #def;
+        }
+
+        input.locked {
+            background-color: #ec8;
+        }
+
+        canvas {
+            border: 1px solid #aaa;
+        }
+
+        #input-table td[rowspan] {
+            text-align: right;
+        }
+    </style>
+    <script type="text/javascript" src="sylvester.js"></script>
+    <script type="text/javascript" src="system.js"></script>
+    <script type="text/javascript" src="inputs.js"></script>
+    <script type="text/javascript" src="graph.js"></script>
+</head>
+<body onload="Reset(); Play();">
+<h1>Homeostat simulator</h1>
+
+<h2>Simulation input</h2>
+
+<p><em>Enter a target state for the Homeostat!</em> You can also edit any and all other parameters. To lock or unlock a variable&mdash;preventing or allowing the Homeostat simulation to change it's value&mdash;click inside the text box and press the <kbd>L</kbd> key.</p>
+
+<table id="input-table">
+    <tr>
+        <th colspan="2">Target state</th>
+        <th colspan="2">Homeostat current state</th>
+        <th colspan="2">Coupling matrix current state</th>
+        <th colspan="2">Inhomogenity current state</th>
+        <th colspan="2">Simulation parameters</th>
+    </tr>
+    <tr>
+        <td rowspan="4"><em>y</em>[<em>k</em>] = </td>
+        <td><input id="y1" /></td>
+        <td rowspan="4"><em>x</em>[<em>k</em>] = </td>
+        <td><input id="x1" /></td>
+        <td rowspan="4"><em>A</em>[<em>k</em>] = </td>
+        <td><input id="A11" /><input id="A12" /><input id="A13" /><input id="A14" /></td>
+        <td rowspan="4"><em>b</em>[<em>k</em>] = </td>
+        <td><input id="b1" /></td>
+        <td rowspan="2"><em>&tau;</em> = </td>
+        <td rowspan="2" style="text-align:left"><input id="tau" value="0.1"></td>
+    </tr>
+    <tr>
+        <td><input id="y2" /></td>
+        <td><input id="x2" /></td>
+        <td><input id="A21" /><input id="A22" /><input id="A23" /><input id="A24" /></td>
+        <td><input id="b2" /></td>
+    </tr>
+    <tr>
+        <td><input id="y3" /></td>
+        <td><input id="x3" /></td>
+        <td><input id="A31" /><input id="A32" /><input id="A33" /><input id="A34" /></td>
+        <td><input id="b3" /></td>
+        <td rowspan="2"><em>&epsilon;</em> = </td>
+        <td rowspan="2" style="text-align:left"><input id="eps" value="0.01"></td>
+    </tr>
+    <tr>
+        <td><input id="y4" /></td>
+        <td><input id="x4" /></td>
+        <td><input id="A41" /><input id="A42" /><input id="A43" /><input id="A44" /></td>
+        <td><input id="b4" /></td>
+    </tr>
+</table>
+
+<p>
+<input type="button" value="Play" onclick="Play();" />
+<input type="button" value="Step" onclick="Step();" />
+<input type="button" value="Stop" onclick="Stop();" />
+<input type="button" value="Reset" onclick="Reset();" />
+</p>
+
+<div id="canvas-container">
+    <canvas id="canvas" width="1000" height="300"></canvas>
+</div>
+
+<h2>Driving equations</h2>
+
+<p>
+    As described by J. Michael Herrmann of Universität Göttingan and Michael Holicki and Ralf Der of Universität Leipzig in their paper: <em>On Ashby's homeostat: A formal model of adaptive regulation</em>. The following equations are from the third section of the paper, <em>The learning homeostat</em>.
+</p>
+
+<p>
+    Tip: try entering random values in the parameters and see how the system stabilizes itself. Also try locking these values (by pressing the L key after entering the number), to see how the system must compensate with other parameters. A particularly interesting example of you lock the main diagonal of the <em>A</em> matrix at some positive values, e.g.
+    <a href="javascript:for(var i=0;i<4;i++){values.A[i][i]=1;inputs.A[i][i].value=1;lockedValues.A[i][i]=true;inputs.A[i][i].classList.add('locked');}Step();">A11=A22=A33=A44=1</a> thereby creating a fundamentally unstable system and seeng how it can be stableized, albeit very delicately.
+</p>
+
+<table>
+    <tr>
+        <td><em>x</em>[<em>k</em> + 1]</td>
+        <td style="text-align: center; width: 3em"> = </td>
+        <td><em>x</em>[<em>k</em>] + <em>&tau;</em>(<em>A</em>[<em>k</em>] <em>x</em>[<em>k</em>]  + <em>b</em>[<em>k</em>])</td>
+    </tr>
+    <tr>
+        <td><em>A</em>[<em>k</em> + 1]</td>
+        <td style="text-align: center;"> = </td>
+        <td><em>A</em>[<em>k</em>] &minus; <em>&epsilon; &tau;</em> (<em>x</em>[<em>k</em>] &minus; <em>y</em>[<em>k</em>]) <em>x</em><sup>T</sup>[<em>k</em>]</td>
+    </tr>
+    <tr>
+        <td><em>b</em>[<em>k</em> + 1]</td>
+        <td style="text-align: center;"> = </td>
+        <td><em>b</em>[<em>k</em>] &minus; <em>&epsilon; &tau;</em> (<em>x</em>[<em>k</em>] &minus; <em>y</em>[<em>k</em>])</td>
+    </tr>
+</table>
+
+<hr style="margin-top: 5em;" />
+
+<h2>License</h2>
+<p>This program uses the <a href="http://sylvester.jcoglan.com/">Sylvester</a> library for calculations but is otherwise original code released to the public domain as described in the LICENSE file.</p>
+
+</body>
+</html>
